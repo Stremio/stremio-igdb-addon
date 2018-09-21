@@ -17,4 +17,5 @@ npm start
 
 ```
 set IGDB_KEY="my-secret-api-key"
+npm start
 ```
