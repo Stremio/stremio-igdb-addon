@@ -82,15 +82,9 @@ const toMeta = (igdbMeta) => {
 		const today = new Date()
 		igdbVideos = igdbMeta.videos.map((elem) => {
 			return {
-				id: elem.video_id,
+				id: "yt_id::"+elem.video_id,
 				title: elem.name,
-				thumbnail: 'https://img.youtube.com/vi/' + elem.video_id + '/default.jpg',
-				publishedAt: today,
-				streams: [
-					{
-						ytId: elem.video_id
-					}
-				]
+				thumbnail: 'https://img.youtube.com/vi/' + elem.video_id + '/default.jpg'
 			}
 		})
 	}
