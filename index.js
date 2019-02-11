@@ -6,7 +6,7 @@ const igdbClient = igdb(process.env.IGDB_KEY)
 const addonSDK = require('stremio-addon-sdk')
 
 const addon = new addonSDK({
-	id: 'org.igdbaddon',
+	id: 'org.igdbaddonsample',
 	name: 'IGDB Addon',
 	version: '0.0.1',
 	description: 'Game trailer, gameplay videos from IGDB.com',
@@ -23,7 +23,7 @@ const addon = new addonSDK({
 	idPrefixes: [ 'igdb-' ]
 })
 
-const toMeta = (igdbMeta) => {
+function toMeta(igdbMeta) {
 
 	let igdbBackground
 
@@ -45,23 +45,18 @@ const toMeta = (igdbMeta) => {
 	let igdbGenres
 
 	if (igdbMeta.genres && igdbMeta.genres.length) {
-		igdbGenres = igdbMeta.genres.map((elem) => { return elem.name })
+		igdbGenres = igdbMeta.genres.map(elem => { return elem.name })
 	}
 
 	let igdbPoster
 
 	if (igdbMeta.cover && igdbMeta.cover.url) {
+
 		igdbPoster = igdbMeta.cover.url.replace('/t_thumb/', '/t_cover_big/')
 
 		if (igdbPoster.startsWith('//'))
 			igdbPoster = 'https:' + igdbPoster
 
-	}
-
-	let igdbRating = 0
-
-	if (igdbMeta.rating) {
-		igdbRating = igdbMeta.rating / 10
 	}
 
 	let igdbPlatforms
@@ -79,10 +74,9 @@ const toMeta = (igdbMeta) => {
 	let igdbVideos
 
 	if (igdbMeta.videos && igdbMeta.videos.length) {
-		const today = new Date()
-		igdbVideos = igdbMeta.videos.map((elem) => {
+		igdbVideos = igdbMeta.videos.map(elem => {
 			return {
-				id: "yt_id::"+elem.video_id,
+				id: 'yt_id::' + elem.video_id,
 				title: elem.name,
 				thumbnail: 'https://img.youtube.com/vi/' + elem.video_id + '/default.jpg'
 			}
@@ -95,9 +89,9 @@ const toMeta = (igdbMeta) => {
 		type: 'channel',
 		poster: igdbPoster || null,
 		description: igdbPlatforms || igdbMeta.summary || null,
-		year: igdbYear || null,
-		background: igdbBackground || null,
-		genre: igdbGenres || null,
+		year: igdbYear,
+		background: igdbBackground,
+		genres: igdbGenres || null,
 		videos: igdbVideos || []
 	}
 
@@ -105,8 +99,8 @@ const toMeta = (igdbMeta) => {
 
 addon.defineCatalogHandler((args, cb) => {
 
-
 	if (args.extra && args.extra.search) {
+
 		// search
 
 		igdbClient.games({
@@ -119,12 +113,11 @@ addon.defineCatalogHandler((args, cb) => {
 			if (res && res.body && res.body.length) {
 				cb(null, { metas: res.body.map(toMeta) })
 			} else {
-				cb(null, { metas: [] })
+				cb(null, null)
 			}
 
 		}).catch(err => {
-			console.log(err)
-			cb(null, { metas: [] })
+			cb(err, null)
 		})
 
 	} else if (args.type == 'channel' && args.id == 'IGDBcatalog') {
@@ -136,51 +129,50 @@ addon.defineCatalogHandler((args, cb) => {
 
 		igdbClient.games({
 			fields: [ 'name', 'cover' ],
+			limit: 30,
+			order: 'popularity:desc',
 			filters: {
 				'release_dates.date-gt': previousYear + '-01-01',
 				'release_dates.date-lt': todayDate
-			},
-			limit: 30,
-			order: 'popularity:desc'
+			}
 		}).then(res => {
 
 			if (res && res.body && res.body.length) {
 				cb(null, { metas: res.body.map(toMeta) })
 			} else {
-				cb(null, { metas: [] })
+				cb(new Error('Received Invalid Catalog Data'), null)
 			}
 
 		}).catch(err => {
-			console.log(err)
-			cb(null, { metas: [] })
+			cb(err, null)
 		})
 
 	} else {
-		cb(null, { metas: [] })
+		cb(new Error('Invalid Catalog Request'), null)
 	}
 
 })
 
 addon.defineMetaHandler((args, cb) => {
 	if (args.type == 'channel' && args.id.startsWith('igdb-')) {
+
 		igdbClient.games({
-			fields: [ 'name', 'cover', 'summary', 'first_release_date', 'screenshots', 'artworks', 'videos', 'genres', 'rating', 'platforms' ],
+			fields: [ 'name', 'cover', 'first_release_date', 'screenshots', 'artworks', 'videos', 'genres', 'platforms', 'summary' ],
 			ids: [ args.id.replace('igdb-', '') ],
-			expand: [ 'platforms', 'genres' ]
-		}).then((res) => {
+			expand: [ 'genres', 'platforms' ]
+		}).then(res => {
 			if (res && res.body && res.body.length) {
 				cb(null, { meta: toMeta(res.body[0]) })
 			} else {
-				cb(null, { meta: {} })
+				cb(new Error('Received Invalid Meta'), null)
 			}
 		}).catch(err => {
-			console.log(err)
-			cb(null, { meta: {} })
+			cb(err, null)
 		})
+
 	} else {
-		cb(null, { meta: {} })
+		cb(new Error('Invalid Meta Request'), null)
 	}
 })
 
-addon.runHTTPWithOptions({ port: 7000 })
-
+addon.runHTTPWithOptions({ port: 7032 })
