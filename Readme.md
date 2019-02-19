@@ -23,7 +23,7 @@ npm start
 ## Tutorial
 
 
-### Setting dependencies
+### 1. Setting dependencies
 
 Create `package.json` and set dependencies
 
@@ -46,7 +46,7 @@ Create `package.json` and set dependencies
 We'll use `stremio-addon-sdk` to create our add-on and `igdb-api-node` to make requests to IGDB.
 
 
-### Define Add-on Manifest
+### 2. Define Add-on Manifest
 
 See all manifest properties [here](https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/manifest.md)
 
@@ -96,7 +96,7 @@ const addon = new addonSDK({
 ```
 
 
-### Convert IGDB Object to Meta Object
+### 3. Convert IGDB Object to Meta Object
 
 This function converts this [IGDB response object](https://gist.github.com/jaruba/d2a6ffc22c36647b01edb8bf1c94ed75) to this Stremio accepted [Meta object](https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/meta.md)
 
@@ -188,7 +188,7 @@ function toMeta(igdbMeta) {
 ```
 
 
-## Meta Handler
+## 4. Meta Handler
 
 Meta is requested when the Detail Page is accessed, it needs as much information as possible about the item to populate the Detail Page.
 
@@ -225,7 +225,7 @@ addon.defineMetaHandler((args, cb) => {
 })
 ```
 
-## Catalog Handler
+## 5. Catalog Handler
 
 In our case the catalog will be requested in two scenarios:
 - Board or Discover Pages requested it
@@ -306,7 +306,7 @@ addon.defineCatalogHandler((args, cb) => {
 ```
 
 
-### Run Add-on
+### 6. Run Add-on
 
 ```javascript
 addon.runHTTPWithOptions({ port: 7032 })
@@ -315,7 +315,7 @@ addon.runHTTPWithOptions({ port: 7032 })
 Now open a terminal window and [run your project](https://github.com/Stremio/stremio-igdb-addon/tree/tutorial#how-to-run)
 
 
-### Add to Stremio
+### 7. Add to Stremio
 
 Add `http://127.0.0.1:7032/manifest.json` to Stremio.
 
