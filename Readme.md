@@ -48,6 +48,8 @@ We'll use `stremio-addon-sdk` to create our add-on and `igdb-api-node` to make r
 
 ### 2. Define Add-on Manifest
 
+Create your project's `index.js` and declare the add-on manifest.
+
 See all manifest properties [here](https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/manifest.md)
 
 ```javascript
