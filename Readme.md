@@ -29,17 +29,17 @@ Create `package.json` and set dependencies
 
 ```json
 {
-	"name": "igdb-stremio-addon",
-	"version": "0.0.1",
-	"description": "Stremio Add-on for IGDB",
-	"main": "index.js",
-	"scripts": {
-		"start": "node index.js"
-	},
-	"dependencies": {
-		"stremio-addon-sdk": "^0.7.1",
-		"igdb-api-node": "^3.1.7"
-	}
+  "name": "igdb-stremio-addon",
+  "version": "0.0.1",
+  "description": "Stremio Add-on for IGDB",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "stremio-addon-sdk": "^0.7.1",
+    "igdb-api-node": "^3.1.7"
+  }
 }
 ```
 
@@ -57,42 +57,42 @@ const addonSDK = require('stremio-addon-sdk')
 
 const addon = new addonSDK({
 
-	// id can be any string unique to each add-on:
-	id: 'org.igdbaddon',
+  // id can be any string unique to each add-on:
+  id: 'org.igdbaddon',
 
-	// human readable name:
-	name: 'IGDB Addon',
+  // human readable name:
+  name: 'IGDB Addon',
 
-	version: '0.0.1',
+  version: '0.0.1',
 
-	// add-on description:
-	description: 'Game trailer, gameplay videos from IGDB.com',
+  // add-on description:
+  description: 'Game trailer, gameplay videos from IGDB.com',
 
-	// resources we will respond with, can also be 'streams' and 'subtitles'
-	resources: [ 'catalog', 'meta' ],
+  // resources we will respond with, can also be 'streams' and 'subtitles'
+  resources: [ 'catalog', 'meta' ],
 
-	// meta types we will use, can also be 'movie', 'series', 'tv' and 'other'
-	types: [ 'channel' ],
+  // meta types we will use, can also be 'movie', 'series', 'tv' and 'other'
+  types: [ 'channel' ],
 
-	// catalogs we will serve:
-	catalogs: [
-		{
-			// meta type this catalog responds with:
-			type: 'channel',
+  // catalogs we will serve:
+  catalogs: [
+    {
+      // meta type this catalog responds with:
+      type: 'channel',
 
-			// id can be any string unique to each catalog:
-			id: 'IGDBcatalog',
+      // id can be any string unique to each catalog:
+      id: 'IGDBcatalog',
 
-			// human readable name:
-			name: 'Games',
+      // human readable name:
+      name: 'Games',
 
-			// supports search:
-			extraSupported: [ 'search' ]
-		}
-	],
+      // supports search:
+      extraSupported: [ 'search' ]
+    }
+  ],
 
-	// meta id prefix:
-	idPrefixes: [ 'igdb-' ]
+  // meta id prefix:
+  idPrefixes: [ 'igdb-' ]
 })
 
 ```
@@ -105,85 +105,85 @@ This function converts this [IGDB response object](https://gist.github.com/jarub
 ```javascript
 function toMeta(igdbMeta) {
 
-	let igdbBackground
+  let igdbBackground
 
-	if (igdbMeta.screenshots && igdbMeta.screenshots.length) {
-		// use screenshot if we have any
-		igdbBackground = igdbMeta.screenshots[0].url
-	} else if (igdbMeta.artworks && igdbMeta.artworks.length) {
-		// otherwise use artworks if we have any
-		igdbBackground = igdbMeta.artworks[0].url
-	}
+  if (igdbMeta.screenshots && igdbMeta.screenshots.length) {
+    // use screenshot if we have any
+    igdbBackground = igdbMeta.screenshots[0].url
+  } else if (igdbMeta.artworks && igdbMeta.artworks.length) {
+    // otherwise use artworks if we have any
+    igdbBackground = igdbMeta.artworks[0].url
+  }
 
-	if (igdbBackground) {
+  if (igdbBackground) {
 
-		// add "https:"" prefix to url
-		if (igdbBackground.startsWith('//'))
-			igdbBackground = 'https:' + igdbBackground
+    // add "https:"" prefix to url
+    if (igdbBackground.startsWith('//'))
+      igdbBackground = 'https:' + igdbBackground
 
-		// convert thumbs to original images for background
-		igdbBackground = igdbBackground.replace('/t_thumb/', '/t_original/')
+    // convert thumbs to original images for background
+    igdbBackground = igdbBackground.replace('/t_thumb/', '/t_original/')
 
-	}
+  }
 
-	let igdbGenres
+  let igdbGenres
 
-	if (igdbMeta.genres && igdbMeta.genres.length) {
-		// add game genres if we have any
-		igdbGenres = igdbMeta.genres.map((elem) => { return elem.name })
-	}
+  if (igdbMeta.genres && igdbMeta.genres.length) {
+    // add game genres if we have any
+    igdbGenres = igdbMeta.genres.map((elem) => { return elem.name })
+  }
 
-	let igdbPoster
+  let igdbPoster
 
-	if (igdbMeta.cover && igdbMeta.cover.url) {
-		// add poster
-		igdbPoster = igdbMeta.cover.url.replace('/t_thumb/', '/t_cover_big/')
+  if (igdbMeta.cover && igdbMeta.cover.url) {
+    // add poster
+    igdbPoster = igdbMeta.cover.url.replace('/t_thumb/', '/t_cover_big/')
 
-		// add "https:" prefix to url
-		if (igdbPoster.startsWith('//'))
-			igdbPoster = 'https:' + igdbPoster
+    // add "https:" prefix to url
+    if (igdbPoster.startsWith('//'))
+      igdbPoster = 'https:' + igdbPoster
 
-	}
+  }
 
-	let igdbPlatforms
+  let igdbPlatforms
 
-	if (igdbMeta.platforms && igdbMeta.platforms.length) {
-		// add platforms list to description
-		igdbPlatforms = 'Platforms: ' + igdbMeta.platforms.map(elem => { return elem.name }).join(', ')
-	}
+  if (igdbMeta.platforms && igdbMeta.platforms.length) {
+    // add platforms list to description
+    igdbPlatforms = 'Platforms: ' + igdbMeta.platforms.map(elem => { return elem.name }).join(', ')
+  }
 
-	let igdbYear
+  let igdbYear
 
-	if (igdbMeta.first_release_date) {
-		// add video game release year
-		igdbYear = parseInt(new Date(igdbMeta.first_release_date).getFullYear())
-	}
+  if (igdbMeta.first_release_date) {
+    // add video game release year
+    igdbYear = parseInt(new Date(igdbMeta.first_release_date).getFullYear())
+  }
 
-	let igdbVideos
+  let igdbVideos
 
-	if (igdbMeta.videos && igdbMeta.videos.length) {
-		// add youtube videos to streams
-		igdbVideos = igdbMeta.videos.map(elem => {
-			return {
-				id: 'yt_id::' + elem.video_id,
-				title: elem.name,
-				thumbnail: 'https://img.youtube.com/vi/' + elem.video_id + '/default.jpg'
-			}
-		})
-	}
+  if (igdbMeta.videos && igdbMeta.videos.length) {
+    // add youtube videos to streams
+    igdbVideos = igdbMeta.videos.map(elem => {
+      return {
+        id: 'yt_id::' + elem.video_id,
+        title: elem.name,
+        thumbnail: 'https://img.youtube.com/vi/' + elem.video_id + '/default.jpg'
+      }
+    })
+  }
 
-	// map everything to Stremio meta object
-	return {
-		id: 'igdb-' + igdbMeta.id,
-		name: igdbMeta.name,
-		type: 'channel',
-		poster: igdbPoster || null,
-		description: igdbPlatforms || igdbMeta.summary || null,
-		year: igdbYear,
-		background: igdbBackground,
-		genres: igdbGenres || null,
-		videos: igdbVideos || []
-	}
+  // map everything to Stremio meta object
+  return {
+    id: 'igdb-' + igdbMeta.id,
+    name: igdbMeta.name,
+    type: 'channel',
+    poster: igdbPoster || null,
+    description: igdbPlatforms || igdbMeta.summary || null,
+    year: igdbYear,
+    background: igdbBackground,
+    genres: igdbGenres || null,
+    videos: igdbVideos || []
+  }
 
 }
 
@@ -209,33 +209,33 @@ Meta is requested when the Detail Page is accessed, it needs as much information
 ```javascript
 addon.defineMetaHandler((args, cb) => {
 
-	// ensure meta type and id are correct
-	if (args.type == 'channel' && args.id.startsWith('igdb-')) {
+  // ensure meta type and id are correct
+  if (args.type == 'channel' && args.id.startsWith('igdb-')) {
 
-		// request the meta id from IGDB
-		igdbClient.games({
-			fields: [ 'name', 'cover', 'first_release_date', 'screenshots', 'artworks', 'videos', 'genres', 'platforms', 'summary' ],
-			ids: [ args.id.replace('igdb-', '') ],
-			expand: [ 'genres', 'platforms' ]
-		}).then(res => {
-			if (res && res.body && res.body.length) {
-				// igdb response is correct and has items
-				// convert igdb object to stremio meta object
-				// and respond to add-on request
-				cb(null, { meta: toMeta(res.body[0]) })
-			} else {
-				// send error if invalid response from IGDB
-				cb(new Error('Received Invalid Meta'), null)
-			}
-		}).catch(err => {
-			// send IGDB request error as add-on response
-			cb(err, null)
-		})
+    // request the meta id from IGDB
+    igdbClient.games({
+      fields: [ 'name', 'cover', 'first_release_date', 'screenshots', 'artworks', 'videos', 'genres', 'platforms', 'summary' ],
+      ids: [ args.id.replace('igdb-', '') ],
+      expand: [ 'genres', 'platforms' ]
+    }).then(res => {
+      if (res && res.body && res.body.length) {
+        // igdb response is correct and has items
+        // convert igdb object to stremio meta object
+        // and respond to add-on request
+        cb(null, { meta: toMeta(res.body[0]) })
+      } else {
+        // send error if invalid response from IGDB
+        cb(new Error('Received Invalid Meta'), null)
+      }
+    }).catch(err => {
+      // send IGDB request error as add-on response
+      cb(err, null)
+    })
 
-	} else {
-		// give error if meta type and id are incorrect
-		cb(new Error('Invalid Meta Request'), null)
-	}
+  } else {
+    // give error if meta type and id are incorrect
+    cb(new Error('Invalid Meta Request'), null)
+  }
 })
 ```
 
@@ -250,71 +250,71 @@ We'll need to handle both of these cases, it should be mentioned that it is not 
 ```javascript
 addon.defineCatalogHandler((args, cb) => {
 
-	if (args.extra && args.extra.search) {
+  if (args.extra && args.extra.search) {
 
-		// search request
+    // search request
 
-		// use IGDB api to search for query
-		igdbClient.games({
-			fields: [ 'name', 'cover' ],
-			limit: 30,
-			order: 'popularity:desc',
-			search: args.extra.search
-		}).then(res => {
+    // use IGDB api to search for query
+    igdbClient.games({
+      fields: [ 'name', 'cover' ],
+      limit: 30,
+      order: 'popularity:desc',
+      search: args.extra.search
+    }).then(res => {
 
-			if (res && res.body && res.body.length) {
-				// igdb response is correct and has items
-				// convert igdb object to stremio meta object
-				// and respond to add-on request
-				cb(null, { metas: res.body.map(toMeta) })
-			} else {
-				// ignore search error, as it might just
-				// have no search results
-				cb(null, null)
-			}
+      if (res && res.body && res.body.length) {
+        // igdb response is correct and has items
+        // convert igdb object to stremio meta object
+        // and respond to add-on request
+        cb(null, { metas: res.body.map(toMeta) })
+      } else {
+        // ignore search error, as it might just
+        // have no search results
+        cb(null, null)
+      }
 
-		}).catch(err => {
-			// send IGDB request error as add-on response
-			cb(err, null)
-		})
+    }).catch(err => {
+      // send IGDB request error as add-on response
+      cb(err, null)
+    })
 
-	} else if (args.type == 'channel' && args.id == 'IGDBcatalog') {
+  } else if (args.type == 'channel' && args.id == 'IGDBcatalog') {
 
-		// get date values to limit catalog response between dates
-		const today = new Date()
+    // get date values to limit catalog response between dates
+    const today = new Date()
 
-		const todayDate = today.toJSON().slice(0, 10) // format: 2018-01-01
-		const previousYear = today.getFullYear() -1 // 2017
+    const todayDate = today.toJSON().slice(0, 10) // format: 2018-01-01
+    const previousYear = today.getFullYear() -1 // 2017
 
-		igdbClient.games({
-			fields: [ 'name', 'cover' ],
-			limit: 30,
-			order: 'popularity:desc',
-			filters: {
-				'release_dates.date-gt': previousYear + '-01-01',
-				'release_dates.date-lt': todayDate
-			}
-		}).then(res => {
+    igdbClient.games({
+      fields: [ 'name', 'cover' ],
+      limit: 30,
+      order: 'popularity:desc',
+      filters: {
+        'release_dates.date-gt': previousYear + '-01-01',
+        'release_dates.date-lt': todayDate
+      }
+    }).then(res => {
 
-			if (res && res.body && res.body.length) {
-				// igdb response is correct and has items
-				// convert igdb object to stremio meta object
-				// and respond to add-on request
-				cb(null, { metas: res.body.map(toMeta) })
-			} else {
-				// send error if invalid response from IGDB
-				cb(new Error('Received Invalid Catalog Data'), null)
-			}
+      if (res && res.body && res.body.length) {
+        // igdb response is correct and has items
+        // convert igdb object to stremio meta object
+        // and respond to add-on request
+        cb(null, { metas: res.body.map(toMeta) })
+      } else {
+        // send error if invalid response from IGDB
+        cb(new Error('Received Invalid Catalog Data'), null)
+      }
 
-		}).catch(err => {
-			// send IGDB request error as add-on response
-			cb(err, null)
-		})
+    }).catch(err => {
+      // send IGDB request error as add-on response
+      cb(err, null)
+    })
 
-	} else {
-		// give error if unknown catalog request
-		cb(new Error('Invalid Catalog Request'), null)
-	}
+  } else {
+    // give error if unknown catalog request
+    cb(new Error('Invalid Catalog Request'), null)
+  }
 
 })
 ```
