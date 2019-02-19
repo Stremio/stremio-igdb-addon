@@ -19,3 +19,7 @@ npm start
 set IGDB_KEY="my-secret-api-key"
 npm start
 ```
+
+## Tutorial
+
+Read the tutorial on how this was made [here](https://github.com/Stremio/stremio-igdb-addon/tree/tutorial#tutorial)
