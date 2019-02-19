@@ -190,7 +190,7 @@ function toMeta(igdbMeta) {
 
 ## 4. Include IGDB API module
 
-Include the IDGB API module, make sure to create an account at IGDB to get a free API key for testing.
+Include the IDGB API module, make sure to create an account at IGDB to get a free API key for testing. You will set your IGDB API key in a process environment variable when you run the project.
 
 ```javascript
 const igdb = require('igdb-api-node').default
