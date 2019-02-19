@@ -188,7 +188,19 @@ function toMeta(igdbMeta) {
 ```
 
 
-## 4. Meta Handler
+## 4. Include IGDB API module
+
+Include the IDGB API module, make sure to create an account at IGDB to get a free API key for testing.
+
+```javascript
+const igdb = require('igdb-api-node').default
+
+const igdbClient = igdb(process.env.IGDB_KEY)
+
+```
+
+
+## 5. Meta Handler
 
 Meta is requested when the Detail Page is accessed, it needs as much information as possible about the item to populate the Detail Page.
 
@@ -225,7 +237,7 @@ addon.defineMetaHandler((args, cb) => {
 })
 ```
 
-## 5. Catalog Handler
+## 6. Catalog Handler
 
 In our case the catalog will be requested in two scenarios:
 - Board or Discover Pages requested it
@@ -306,7 +318,7 @@ addon.defineCatalogHandler((args, cb) => {
 ```
 
 
-### 6. Run Add-on
+### 7. Run Add-on
 
 ```javascript
 addon.runHTTPWithOptions({ port: 7032 })
@@ -315,7 +327,7 @@ addon.runHTTPWithOptions({ port: 7032 })
 Now open a terminal window and [run your project](https://github.com/Stremio/stremio-igdb-addon/tree/tutorial#how-to-run)
 
 
-### 7. Add to Stremio
+### 8. Add to Stremio
 
 Add `http://127.0.0.1:7032/manifest.json` to Stremio.
 
