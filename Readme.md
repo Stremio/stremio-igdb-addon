@@ -27,7 +27,7 @@ npm start
 
 Create `package.json` and set dependencies
 
-```
+```json
 {
 	"name": "igdb-stremio-addon",
 	"version": "0.0.1",
