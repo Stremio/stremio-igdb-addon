@@ -53,9 +53,9 @@ Create your project's `index.js` and declare the add-on manifest.
 See all manifest properties [here](https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/manifest.md)
 
 ```javascript
-const addonSDK = require('stremio-addon-sdk')
+const { addonBuilder, serveHTTP }  = require('stremio-addon-sdk')
 
-const addon = new addonSDK({
+const addon = new addonBuilder({
 
   // id can be any string unique to each add-on:
   id: 'org.igdbaddon',
@@ -87,7 +87,7 @@ const addon = new addonSDK({
       name: 'Games',
 
       // supports search:
-      extraSupported: [ 'search' ]
+      extra: [ { name: 'search' } ]
     }
   ],
 
@@ -207,35 +207,38 @@ const igdbClient = igdb(process.env.IGDB_KEY)
 Meta is requested when the Detail Page is accessed, it needs as much information as possible about the item to populate the Detail Page.
 
 ```javascript
-addon.defineMetaHandler((args, cb) => {
+addon.defineMetaHandler(args => {
 
-  // ensure meta type and id are correct
-  if (args.type == 'channel' && args.id.startsWith('igdb-')) {
+  return new Promise((resolve, reject) => {
 
-    // request the meta id from IGDB
-    igdbClient.games({
-      fields: [ 'name', 'cover', 'first_release_date', 'screenshots', 'artworks', 'videos', 'genres', 'platforms', 'summary' ],
-      ids: [ args.id.replace('igdb-', '') ],
-      expand: [ 'genres', 'platforms' ]
-    }).then(res => {
-      if (res && res.body && res.body.length) {
-        // igdb response is correct and has items
-        // convert igdb object to stremio meta object
-        // and respond to add-on request
-        cb(null, { meta: toMeta(res.body[0]) })
-      } else {
-        // send error if invalid response from IGDB
-        cb(new Error('Received Invalid Meta'), null)
-      }
-    }).catch(err => {
-      // send IGDB request error as add-on response
-      cb(err, null)
-    })
+    // ensure meta type and id are correct
+    if (args.type == 'channel' && args.id.startsWith('igdb-')) {
 
-  } else {
-    // give error if meta type and id are incorrect
-    cb(new Error('Invalid Meta Request'), null)
-  }
+      // request the meta id from IGDB
+      igdbClient.games({
+        fields: [ 'name', 'cover', 'first_release_date', 'screenshots', 'artworks', 'videos', 'genres', 'platforms', 'summary' ],
+        ids: [ args.id.replace('igdb-', '') ],
+        expand: [ 'genres', 'platforms' ]
+      }).then(res => {
+        if (res && res.body && res.body.length) {
+          // igdb response is correct and has items
+          // convert igdb object to stremio meta object
+          // and respond to add-on request
+          resolve({ meta: toMeta(res.body[0]) })
+        } else {
+          // send error if invalid response from IGDB
+          reject(new Error('Received Invalid Meta'))
+        }
+      }).catch(err => {
+        // send IGDB request error as add-on response
+        reject(err)
+      })
+
+    } else {
+      // give error if meta type and id are incorrect
+      reject(new Error('Invalid Meta Request'))
+    }
+  })
 })
 ```
 
@@ -248,74 +251,76 @@ In our case the catalog will be requested in two scenarios:
 We'll need to handle both of these cases, it should be mentioned that it is not uncommon for the catalog meta objects to include minimal information: `name`, `type`, `releaseInfo` and `poster`, as the catalog won't need more metadata to be shown correctly.
 
 ```javascript
-addon.defineCatalogHandler((args, cb) => {
+addon.defineCatalogHandler(args => {
 
-  if (args.extra && args.extra.search) {
+  return new Promise((resolve, reject) => {
 
-    // search request
+    if (args.extra.search) {
 
-    // use IGDB api to search for query
-    igdbClient.games({
-      fields: [ 'name', 'cover' ],
-      limit: 30,
-      order: 'popularity:desc',
-      search: args.extra.search
-    }).then(res => {
+      // search request
 
-      if (res && res.body && res.body.length) {
-        // igdb response is correct and has items
-        // convert igdb object to stremio meta object
-        // and respond to add-on request
-        cb(null, { metas: res.body.map(toMeta) })
-      } else {
-        // ignore search error, as it might just
-        // have no search results
-        cb(null, null)
-      }
+      // use IGDB api to search for query
+      igdbClient.games({
+        fields: [ 'name', 'cover' ],
+        limit: 30,
+        order: 'popularity:desc',
+        search: args.extra.search
+      }).then(res => {
 
-    }).catch(err => {
-      // send IGDB request error as add-on response
-      cb(err, null)
-    })
+        if (res && res.body && res.body.length) {
+          // igdb response is correct and has items
+          // convert igdb object to stremio meta object
+          // and respond to add-on request
+          resolve({ metas: res.body.map(toMeta) })
+        } else {
+          // ignore search error, as it might just
+          // have no search results
+          reject(new Error('No results found for: ' + args.extra.search))
+        }
 
-  } else if (args.type == 'channel' && args.id == 'IGDBcatalog') {
+      }).catch(err => {
+        // send IGDB request error as add-on response
+        reject(err)
+      })
 
-    // get date values to limit catalog response between dates
-    const today = new Date()
+    } else if (args.type == 'channel' && args.id == 'IGDBcatalog') {
 
-    const todayDate = today.toJSON().slice(0, 10) // format: 2018-01-01
-    const previousYear = today.getFullYear() -1 // 2017
+      // get date values to limit catalog response between dates
+      const today = new Date()
 
-    igdbClient.games({
-      fields: [ 'name', 'cover' ],
-      limit: 30,
-      order: 'popularity:desc',
-      filters: {
-        'release_dates.date-gt': previousYear + '-01-01',
-        'release_dates.date-lt': todayDate
-      }
-    }).then(res => {
+      const todayDate = today.toJSON().slice(0, 10) // format: 2018-01-01
+      const previousYear = today.getFullYear() -1 // 2017
 
-      if (res && res.body && res.body.length) {
-        // igdb response is correct and has items
-        // convert igdb object to stremio meta object
-        // and respond to add-on request
-        cb(null, { metas: res.body.map(toMeta) })
-      } else {
-        // send error if invalid response from IGDB
-        cb(new Error('Received Invalid Catalog Data'), null)
-      }
+      igdbClient.games({
+        fields: [ 'name', 'cover' ],
+        limit: 30,
+        order: 'popularity:desc',
+        filters: {
+          'release_dates.date-gt': previousYear + '-01-01',
+          'release_dates.date-lt': todayDate
+        }
+      }).then(res => {
 
-    }).catch(err => {
-      // send IGDB request error as add-on response
-      cb(err, null)
-    })
+        if (res && res.body && res.body.length) {
+          // igdb response is correct and has items
+          // convert igdb object to stremio meta object
+          // and respond to add-on request
+          resolve({ metas: res.body.map(toMeta) })
+        } else {
+          // send error if invalid response from IGDB
+          reject(new Error('Received Invalid Catalog Data'))
+        }
 
-  } else {
-    // give error if unknown catalog request
-    cb(new Error('Invalid Catalog Request'), null)
-  }
+      }).catch(err => {
+        // send IGDB request error as add-on response
+        reject(err)
+      })
 
+    } else {
+      // give error if unknown catalog request
+      reject(new Error('Invalid Catalog Request'))
+    }
+  })
 })
 ```
 
@@ -323,7 +328,7 @@ addon.defineCatalogHandler((args, cb) => {
 ### 7. Run Add-on
 
 ```javascript
-addon.runHTTPWithOptions({ port: 7032 })
+serveHTTP(addon.getInterface(), { port: 7032 })
 ```
 
 Now open a terminal window and [run your project](https://github.com/Stremio/stremio-igdb-addon/tree/tutorial#how-to-run)

@@ -101,7 +101,7 @@ addon.defineCatalogHandler(args => {
 
 	return new Promise((resolve, reject) => {
 
-		if (args.extra && args.extra.search) {
+		if (args.extra.search) {
 
 			// search
 
