@@ -3,9 +3,9 @@ const igdb = require('igdb-api-node').default
 
 const igdbClient = igdb(process.env.IGDB_KEY)
 
-const addonSDK = require('stremio-addon-sdk')
+const { addonBuilder, serveHTTP }  = require('stremio-addon-sdk')
 
-const addon = new addonSDK({
+const addon = new addonBuilder({
 	id: 'org.igdbaddonsample',
 	name: 'IGDB Addon',
 	version: '0.0.1',
@@ -17,7 +17,7 @@ const addon = new addonSDK({
 			type: 'channel',
 			id: 'IGDBcatalog',
 			name: 'Games',
-			extraSupported: [ 'search' ]
+			extra: [ { name: 'search' } ]
 		}
 	],
 	idPrefixes: [ 'igdb-' ]
@@ -97,82 +97,90 @@ function toMeta(igdbMeta) {
 
 }
 
-addon.defineCatalogHandler((args, cb) => {
+addon.defineCatalogHandler(args => {
 
-	if (args.extra && args.extra.search) {
+	return new Promise((resolve, reject) => {
 
-		// search
+		if (args.extra && args.extra.search) {
 
-		igdbClient.games({
-			fields: [ 'name', 'cover' ],
-			limit: 30,
-			order: 'popularity:desc',
-			search: args.extra.search
-		}).then(res => {
+			// search
 
-			if (res && res.body && res.body.length) {
-				cb(null, { metas: res.body.map(toMeta) })
-			} else {
-				cb(null, null)
-			}
+			igdbClient.games({
+				fields: [ 'name', 'cover' ],
+				limit: 30,
+				order: 'popularity:desc',
+				search: args.extra.search
+			}).then(res => {
 
-		}).catch(err => {
-			cb(err, null)
-		})
+				if (res && res.body && res.body.length) {
+					resolve({ metas: res.body.map(toMeta) })
+				} else {
+					reject(new Error('No results found for: ' + args.extra.search))
+				}
 
-	} else if (args.type == 'channel' && args.id == 'IGDBcatalog') {
+			}).catch(err => {
+				reject(err)
+			})
 
-		const today = new Date()
+		} else if (args.type == 'channel' && args.id == 'IGDBcatalog') {
 
-		const todayDate = today.toJSON().slice(0, 10) // format: 2018-01-01
-		const previousYear = today.getFullYear() -1 // 2017
+			const today = new Date()
 
-		igdbClient.games({
-			fields: [ 'name', 'cover' ],
-			limit: 30,
-			order: 'popularity:desc',
-			filters: {
-				'release_dates.date-gt': previousYear + '-01-01',
-				'release_dates.date-lt': todayDate
-			}
-		}).then(res => {
+			const todayDate = today.toJSON().slice(0, 10) // format: 2018-01-01
+			const previousYear = today.getFullYear() -1 // 2017
 
-			if (res && res.body && res.body.length) {
-				cb(null, { metas: res.body.map(toMeta) })
-			} else {
-				cb(new Error('Received Invalid Catalog Data'), null)
-			}
+			igdbClient.games({
+				fields: [ 'name', 'cover' ],
+				limit: 30,
+				order: 'popularity:desc',
+				filters: {
+					'release_dates.date-gt': previousYear + '-01-01',
+					'release_dates.date-lt': todayDate
+				}
+			}).then(res => {
 
-		}).catch(err => {
-			cb(err, null)
-		})
+				if (res && res.body && res.body.length) {
+					resolve({ metas: res.body.map(toMeta) })
+				} else {
+					reject(new Error('Received Invalid Catalog Data'))
+				}
 
-	} else {
-		cb(new Error('Invalid Catalog Request'), null)
-	}
+			}).catch(err => {
+				reject(err)
+			})
+
+		} else {
+			reject(new Error('Invalid Catalog Request'))
+		}
+	})
 
 })
 
-addon.defineMetaHandler((args, cb) => {
-	if (args.type == 'channel' && args.id.startsWith('igdb-')) {
+addon.defineMetaHandler(args => {
 
-		igdbClient.games({
-			fields: [ 'name', 'cover', 'first_release_date', 'screenshots', 'artworks', 'videos', 'genres', 'platforms', 'summary' ],
-			ids: [ args.id.replace('igdb-', '') ],
-			expand: [ 'genres', 'platforms' ]
-		}).then(res => {
-			if (res && res.body && res.body.length) {
-				cb(null, { meta: toMeta(res.body[0]) })
-			} else {
-				cb(new Error('Received Invalid Meta'), null)
-			}
-		}).catch(err => {
-			cb(err, null)
-		})
+	return new Promise((resolve, reject) => {
 
-	} else {
-		cb(new Error('Invalid Meta Request'), null)
-	}
+		if (args.type == 'channel' && args.id.startsWith('igdb-')) {
+
+			igdbClient.games({
+				fields: [ 'name', 'cover', 'first_release_date', 'screenshots', 'artworks', 'videos', 'genres', 'platforms', 'summary' ],
+				ids: [ args.id.replace('igdb-', '') ],
+				expand: [ 'genres', 'platforms' ]
+			}).then(res => {
+				if (res && res.body && res.body.length) {
+					resolve({ meta: toMeta(res.body[0]) })
+				} else {
+					reject(new Error('Received Invalid Meta'))
+				}
+			}).catch(err => {
+				reject(err)
+			})
+
+		} else {
+			reject(new Error('Invalid Meta Request'))
+		}
+
+	})
 })
 
-addon.runHTTPWithOptions({ port: 7032 })
+serveHTTP(addon.getInterface(), { port: 7032 })
